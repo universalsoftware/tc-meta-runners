@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="Mysql - Restore dump">
+  <description>Run SQL commands and file</description>
+  <settings>
+    <parameters>
+      <param name="system.mysql.db.host" value="" spec="text description='MySQL hostname (if empty - `localhost` will be used)' display='normal' label='MySQL hostname:' validationMode='any'" />
+      <param name="system.mysql.db.user" value="" spec="text description='MySQL username (if empty - `root` will be used)' display='normal' label='MySQL username:' validationMode='any'" />
+      <param name="system.mysql.db.password" value="" spec="password description='MySQL password' display='normal' label='MySQL Password:' validationMode='any'" />
+      <param name="system.mysql.db.name" value="" spec="text description='MySQL DB name' display='normal' label='MySQL DB name:' validationMode='not_empty'" />
+      <param name="system.sql.before" value="" spec="text description='Set SQL before deploy a sql dump file' label='SQL before dump:' validationMode='any'" />
+      <param name="system.sql.dump" value="" spec="text description='SQL dump file location (http or local FS)' label='SQL dump:' validationMode='not_empty'" />
+      <param name="system.sql.after" value="" spec="text description='Set SQL after deploy a sql dump file' label='SQL after dump:' validationMode='any'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_14" name="" type="Ant">
+        <parameters>
+          <param name="build-file"><![CDATA[<project name="Run restore Mysql dump">
+<condition property="mysql.host" value="${mysql.db.host}" else="localhost">
+	<matches pattern=".+" string="${mysql.db.host}"/>
+</condition>
+<condition property="mysql.user" value="${mysql.db.user}" else="root">
+	<matches pattern=".+" string="${mysql.db.user}"/>
+</condition>
+<condition property="mysql.password.set">
+	<matches pattern=".+" string="${mysql.db.password}"/>
+</condition>
+
+<property name="mysql.conf" value="${teamcity.build.tempDir}/my.cnf" />
+<condition property="mysql.exec.params" value="--defaults-file=${mysql.conf} -D ${mysql.db.name} " else="-u${mysql.user} -h${mysql.host} -D ${mysql.db.name} ">
+	<matches pattern=".+" string="${mysql.db.password}" />
+</condition>
+
+<condition property="sql.before.set">
+	<matches pattern=".+" string="${sql.before}"/>
+</condition>
+
+<condition property="sql.after.set">
+	<matches pattern=".+" string="${sql.after}"/>
+</condition>
+
+<condition property="sql.dump.remote">
+	<matches pattern="://" string="${sql.dump}"/>
+</condition>
+
+<condition property="sql.dump.file" value="${teamcity.build.tempDir}/mysql.dump.sql" else="${sql.dump}">
+	<istrue value="${sql.dump.remote}" />
+</condition>
+<target name="runMysql" depends="execSqlBefore,execSqlDump,execSqlAfter" />
+	
+<target name="createMysqlConf" if="${mysql.password.set}">
+<echo file="${mysql.conf}" append="false">[mysql]
+user = ${mysql.user}
+password = ${mysql.db.password}
+host = ${mysql.host}
+</echo>
+</target>
+
+<target name="execSqlBefore" depends="createMysqlConf" if="${sql.before.set}">
+	<exec executable="mysql">
+		<arg line="${mysql.exec.params} -e "/>
+		<arg value="${sql.before}"/>
+	</exec>
+</target>
+
+<target name="execSqlAfter" depends="execSqlDump" if="${sql.after.set}">
+	<exec executable="mysql">
+		<arg line="${mysql.exec.params} -e "/>
+		<arg value="${sql.after}"/>
+	</exec>
+</target>
+
+<target name="execSqlDump" depends="execSqlBefore,createMysqlConf,getDumpFile">
+	<exec executable="mysql" input="${sql.dump.file}">
+		<arg line="${mysql.exec.params}" />
+	</exec>
+</target>
+
+<target name="getDumpFile" if="sql.dump.remote">
+	<get src="${sql.dump}" dest="${sql.dump.file}" verbose="on" skipexisting="false"/>
+</target>
+
+</project>]]></param>
+          <param name="build-file-path" value="build.xml" />
+          <param name="target" value="runMysql" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use-custom-build-file" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <requirements />
+  </settings>
+</meta-runner>
+

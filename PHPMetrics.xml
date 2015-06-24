@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="PHP - PHP Metrics">
+  <description>Run PHP Metrics</description>
+  <settings>
+    <parameters>
+      <param name="system.phpmetr.runtime" value="" spec="text description='PHP Metrics runtime (if empty - latest phpmetrics.phar will be downloaded)' display='normal' label='PHP Metricks runtime:' validationMode='any'" />
+      <param name="system.phpmetr.workingDir" value="" spec="text description='Working directory (if empty - current working directory will be used)' display='normal' label='Working directory:' validationMode='any'" />
+      <param name="system.phpmetr.analyzePath" value="" spec="text description='Analyze path (if empty - current working directory will be used)' display='normal' label='Analyze path:' validationMode='any'" />
+      <param name="system.phpmetr.params" value="" spec="text description='PHP Metrics parameters (double quotes not supported)' display='normal' label='PHP Metrics parameters:' validationMode='any'" />
+      <param name="system.php.params" value="" spec="text descritpion='Optional parameters for php' display='normal' label='PHP exec parameters:' validationMode='any'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_14" name="" type="Ant">
+        <parameters>
+          <param name="build-file"><![CDATA[<project name="Run PHPDoc">
+<condition property="php.workingDir" value="${phpmetr.workingDir}" else="${teamcity.build.workingDir}">
+	<matches pattern=".+" string="${phpmetr.workingDir}"/>
+</condition>
+<condition property="phpmetr.analyzeDir" value="${phpmetr.analyzePath}" else=".">
+	<matches pattern=".+" string="${phpmetr.analyzePath}"/>
+</condition>
+<condition property="phpmetr.runtime.set">
+	<matches pattern=".+" string="${phpmetr.runtime}"/>
+</condition>
+
+<property name="phpmetr.phar.exec" value="${teamcity.build.tempDir}/phpmetrics.phar" />
+
+<condition property="phpmetr.runtime.exec" value="${phpmetr.runtime}" else="${phpmetr.phar.exec}">
+	<matches pattern=".+" string="${phpmetr.runtime}"/>
+</condition>
+<property name="phpmetr.result.dir" value="${teamcity.build.tempDir}/phpmetrics" />
+<property name="phpmetr.result.html" value="${phpmetr.result.dir}/index.html" />
+<property name="phpmetr.result.zip" value="${teamcity.build.tempDir}/phpmetrics.zip" />
+
+<condition property="php.exec.params" value="${php.params}" else="-d display_errors=On">
+	<matches pattern=".+" string="${php.params}"/>
+</condition>
+
+<target name="runMetrics" depends="runPhpMetrics,collectMetrics"/>
+
+<target name="runPhpMetrics" depends="getPhpMetrics,mkPhpMetricsResultDir">
+  <exec executable="php" dir="${php.workingDir}" failonerror="false">
+    <arg line="${php.exec.params} -f &quot;${phpmetr.runtime.exec}&quot; -- ${phpmetr.params} --report-html=&quot;${phpmetr.result.html}&quot; ${phpmetr.analyzeDir}" />
+  </exec>
+</target>
+
+<target name="collectMetrics" depends="runPhpMetrics">
+  <zip basedir="${phpmetr.result.dir}" destfile="${phpmetr.result.zip}" />
+  <echo>##teamcity[publishArtifacts '${phpmetr.result.zip}']</echo>
+</target>
+
+<target name="getPhpMetrics" unless="phpdoc.runtime.set">
+  <get src="https://github.com/Halleck45/PhpMetrics/raw/master/build/phpmetrics.phar" dest="${phpmetr.phar.exec}" verbose="on" skipexisting="false"/>
+</target>
+
+<target name="mkPhpMetricsResultDir">
+    <mkdir dir="${phpmetr.result.dir}"/>
+</target>
+
+</project>]]></param>
+          <param name="build-file-path" value="build.xml" />
+          <param name="target" value="runMetrics" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use-custom-build-file" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <requirements />
+  </settings>
+</meta-runner>

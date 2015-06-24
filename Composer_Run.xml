@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="PHP - Run Composer">
+  <description>Run Composer</description>
+  <settings>
+    <parameters>
+      <param name="system.composer.runtime" value="" spec="text description='An absoluth path to composer runtime (if empty - latest composer.phar will be downloaded)' display='normal' label='Composer runtime:' validationMode='any'" />
+      <param name="system.dest.dir" value="" spec="text description='Directory where composer.json is located (if empty - current working directory will be used)' display='normal' label='Composer.json directory:' validationMode='any'" />
+      <param name="system.composer.command" value="install" spec="text description='Composer command (install/update)' display='normal' label='Composer command:' validationMode='not_empty'" />
+      <param name="system.composer.params" value="" spec="text description='Optional composer.phar parameters' display='normal' label='Composer parameters:' validationMode='any'" />
+      <param name="system.php.params" value="" spec="text descritpion='Optional parameter for php' display='normal' label='PHP exec parameters:' validationMode='any'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_14" name="" type="Ant">
+        <parameters>
+          <param name="build-file"><![CDATA[<project name="Run Composer">
+<condition property="composer.dest.dir" value="${dest.dir}" else="${teamcity.build.workingDir}">
+	<matches pattern=".+" string="${dest.dir}"/>
+</condition>
+
+<property name="composer.params" value="${composer.params}"/>
+
+<condition property="composer.runtime.set">
+	<matches pattern=".+" string="${composer.runtime}"/>
+</condition>
+
+<condition property="composer.runtime.exec" value="${composer.runtime}" else="${teamcity.build.tempDir}/composer.phar">
+	<matches pattern=".+" string="${composer.runtime}"/>
+</condition>
+
+<condition property="php.exec.params" value="${php.params}" else="-d display_errors=On -d allow_url_fopen=On">
+	<matches pattern=".+" string="${php.params}"/>
+</condition>
+
+<target name="runComposer" depends="getComposer">
+  <exec executable="php" failonerror="true" dir="${composer.dest.dir}">
+    <arg line="${php.exec.params} -f &quot;${composer.runtime.exec}&quot; -- ${composer.command} ${composer.params}"/>
+  </exec>
+</target>
+
+<target name="getComposer" unless="composer.runtime.set">
+  <get src="http://getcomposer.org/composer.phar" dest="${teamcity.build.tempDir}" verbose="on" skipexisting="true"/>
+</target>
+
+</project>]]></param>
+          <param name="build-file-path" value="build.xml" />
+          <param name="target" value="runComposer" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use-custom-build-file" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <requirements />
+  </settings>
+</meta-runner>

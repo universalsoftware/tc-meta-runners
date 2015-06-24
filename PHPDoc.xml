@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="PHP - PHPDocumentator 2">
+  <description>Run PHPDocumentator 2</description>
+  <settings>
+    <parameters>
+      <param name="system.phpdoc.runtime" value="" spec="text description='PHP Documentator runtime (if empty - latest phpdoc.phar will be downloaded)' display='normal' label='PHPDoc runtime:' validationMode='any'" />
+      <param name="system.phpdoc.workingDir" value="" spec="text description='Working directory (if empty - current working directory will be used)' display='normal' label='Working directory:' validationMode='any'" />
+      <param name="system.phpdoc.params" value="" spec="text description='Phpdoc parameters. Option -t forbindden. Double quote not supported' display='normal' label='PHPDoc parameters:' validationMode='not_empty'" />
+      <param name="system.php.params" value="" spec="text descritpion='Optional parameters for php' display='normal' label='PHP exec parameters:' validationMode='any'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_14" name="" type="Ant">
+        <parameters>
+          <param name="build-file"><![CDATA[<project name="Run PHPDoc">
+<condition property="php.workingDir" value="${phpdoc.workingDir}" else="${teamcity.build.workingDir}">
+	<matches pattern=".+" string="${phpdoc.workingDir}"/>
+</condition>
+
+<condition property="phpdoc.runtime.set">
+	<matches pattern=".+" string="${phpdoc.runtime}"/>
+</condition>
+<property name="phpdoc.phar.exec" value="${teamcity.build.tempDir}/phpdoc.phar" />
+<condition property="phpdoc.runtime.exec" value="${phpdoc.runtime}" else="${phpdoc.phar.exec}">
+	<matches pattern=".+" string="${phpdoc.runtime}"/>
+</condition>
+<property name="phpdoc.doc.dir" value="${teamcity.build.tempDir}/phpdoc"/>
+<property name="phpdoc.doc.zip" value="${teamcity.build.tempDir}/phpdoc.zip"/>
+
+<condition property="php.exec.params" value="${php.params}" else="-d display_errors=On">
+	<matches pattern=".+" string="${php.params}"/>
+</condition>
+
+<target name="runDoc" depends="runPhpdoc,collectDoc"/>
+
+<target name="runPhpdoc" depends="getPhpdoc">
+  <exec executable="php" dir="${php.workingDir}" failonerror="true">
+    <arg line="${php.exec.params} -f &quot;${phpdoc.runtime.exec}&quot; -- ${phpdoc.params} -t &quot;${phpdoc.doc.dir}&quot;" />
+  </exec>
+</target>
+
+<target name="collectDoc" depends="runPhpdoc">
+  <zip basedir="${phpdoc.doc.dir}" destfile="${phpdoc.doc.zip}" />
+  <echo>##teamcity[publishArtifacts '${phpdoc.doc.zip}']</echo>
+</target>
+
+<target name="getPhpdoc" unless="phpdoc.runtime.set">
+  <get src="http://phpdoc.org/phpDocumentor.phar" dest="${phpdoc.phar.exec}" verbose="on" skipexisting="false"/>
+</target>
+
+</project>]]></param>
+          <param name="build-file-path" value="build.xml" />
+          <param name="target" value="runDoc" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use-custom-build-file" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <requirements />
+  </settings>
+</meta-runner>
