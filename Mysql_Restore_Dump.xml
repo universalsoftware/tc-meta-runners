@@ -56,21 +56,21 @@ host = ${mysql.host}
 </target>
 
 <target name="execSqlBefore" depends="createMysqlConf" if="${sql.before.set}">
-	<exec executable="mysql">
+	<exec executable="mysql" failonerror="true">
 		<arg line="${mysql.exec.params} -e "/>
 		<arg value="${sql.before}"/>
 	</exec>
 </target>
 
 <target name="execSqlAfter" depends="execSqlDump" if="${sql.after.set}">
-	<exec executable="mysql">
+	<exec executable="mysql" failonerror="true">
 		<arg line="${mysql.exec.params} -e "/>
 		<arg value="${sql.after}"/>
 	</exec>
 </target>
 
 <target name="execSqlDump" depends="execSqlBefore,createMysqlConf,getDumpFile">
-	<exec executable="mysql" input="${sql.dump.file}">
+	<exec executable="mysql" input="${sql.dump.file}" failonerror="true">
 		<arg line="${mysql.exec.params}" />
 	</exec>
 </target>
