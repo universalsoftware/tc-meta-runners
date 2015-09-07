@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="JSDuck - Javascript Documentation">
+  <description>Run JSDuck</description>
+  <settings>
+    <parameters>
+      <param name="system.jsduck.runtime" value="" spec="text description='JSDuck runtime (if empty - simple jsduck will be used)' display='normal' label='JSDuck runtime:' validationMode='any'" />
+      <param name="system.jsduck.workingDir" value="" spec="text description='Working directory (if empty - current working directory will be used)' display='normal' label='Working directory:' validationMode='any'" />
+      <param name="system.jsduck.params" value="" spec="text description='JSDuck additional params. Param --output will be rewritten. Double quote not supported' display='normal' label='JSDuck parameters:' validationMode='not_empty'" />
+    </parameters>
+    <build-runners>
+      <runner id="RUNNER_14" name="" type="Ant">
+        <parameters>
+          <param name="build-file"><![CDATA[<project name="Run JSDuck">
+<condition property="jsduck.workingDir" value="${jsduck.workingDir}" else="${teamcity.build.workingDir}">
+	<matches pattern=".+" string="${jsduck.workingDir}"/>
+</condition>
+
+<condition property="jsduck.runtime.exec" value="${jsduck.runtime}" else="jsduck">
+	<matches pattern=".+" string="${jsduck.runtime}"/>
+</condition>
+<property name="jsduck.doc.dir" value="${teamcity.build.tempDir}/jsduck"/>
+<property name="jsduck.doc.zip" value="${teamcity.build.tempDir}/jsduck.zip"/>
+
+<condition property="jsduck.exec.params" value="${jsduck.params}" else="">
+	<matches pattern=".+" string="${jsduck.params}"/>
+</condition>
+
+<target name="runDoc" depends="runJsduck,collectDoc"/>
+
+<target name="runJsduck">
+  <exec executable="${jsduck.runtime.exec}" dir="${jsduck.workingDir}" failonerror="true">
+    <arg line="${jsduck.exec.params} --output &quot;${jsduck.doc.dir}&quot;" />
+  </exec>
+</target>
+
+<target name="collectDoc" depends="runJsduck">
+  <zip basedir="${jsduck.doc.dir}" destfile="${jsduck.doc.zip}" />
+  <echo>##teamcity[publishArtifacts '${jsduck.doc.zip}']</echo>
+</target>
+</project>]]></param>
+          <param name="build-file-path" value="build.xml" />
+          <param name="target" value="runDoc" />
+          <param name="teamcity.coverage.emma.include.source" value="true" />
+          <param name="teamcity.coverage.emma.instr.parameters" value="-ix -*Test*" />
+          <param name="teamcity.coverage.idea.includePatterns" value="*" />
+          <param name="teamcity.step.mode" value="default" />
+          <param name="use-custom-build-file" value="true" />
+        </parameters>
+      </runner>
+    </build-runners>
+    <requirements />
+  </settings>
+</meta-runner>
